@@ -22,6 +22,7 @@ app.use(express.json());
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  useFindAndModify: false,
 });
 mongoose.connection.on("open", function (ref) {
   console.log("MongoDB connected");
@@ -47,27 +48,35 @@ app.use("/articles", articles);
 // ERRORS ----------------------------------------------------------------
 // any request or response errors will be handled and displayed here
 
+app.use((req, res, next) => {
+  const error = new Error("Endpoint Not Found");
+  error.status = 404;
+  next(error);
+});
+
 // development error handler
 // will print stacktrace
 if (!isProduction) {
-  app.use(function(err, req, res, next) {
+  app.use(function (err, req, res, next) {
     console.log(err.stack);
 
     res.status(err.status || 500);
 
-    res.json({'errors': {
-      message: err.message,
-      error: err
-    }});
+    res.json({
+      error: {
+        message: err.message,
+      },
+    });
   });
 }
 
 // production error handler
 // no stacktraces leaked to user
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   res.status(err.status || 500);
-  res.json({'errors': {
-    message: err.message,
-    error: {}
-  }});
+  res.json({
+    error: {
+      message: err.message,
+    },
+  });
 });
